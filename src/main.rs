@@ -1,5 +1,4 @@
 use iced::Theme;
-
 use crate::{app::{AppState, state_loop, update}, view::view};
 
 mod utils;
