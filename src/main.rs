@@ -4,6 +4,7 @@ use crate::{app::{AppState, state_loop, update}, view::view};
 mod utils;
 mod app;
 mod view;
+mod hero_section;
 
 fn main() -> iced::Result {
     iced::application(AppState::default, update, view)

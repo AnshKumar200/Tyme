@@ -1,8 +1,8 @@
 use iced::{
-    Border, Element, Length::Fill, border, widget::{Column, button, column, row, text}
+    Border, Element, Length::Fill, widget::{Column, button, column, row, text}
 };
 
-use crate::app::{AppState, Message};
+use crate::{app::{AppState, Message}, hero_section::hero_section};
 
 pub fn view(state: &AppState) -> Element<'_, Message> {
     let mut column = Column::new().spacing(10).padding(10);
@@ -25,15 +25,14 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
     .spacing(8);
     
     column = column.push(nav_bar);
-    
-    let hero_sec = text(state.total_time).size(24);
-    column = column.push(hero_sec);
+    column = column.push(hero_section(state));
 
     for (key, value) in &state.programs {
         let rr = row![
             column![text(key).size(20), text("bar or something")].width(Fill),
             text(value).size(20),
         ];
+
         column = column.push(rr)
     }
 
