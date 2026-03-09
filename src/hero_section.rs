@@ -1,14 +1,13 @@
 use iced::{
-    Color, Element, Length, Radians, Rectangle, Renderer, Theme,
+    Alignment, Color, Element, Length, Radians, Rectangle, Renderer, Theme,
     alignment::Horizontal,
     mouse::Cursor,
     widget::{
-        canvas,
-        canvas::{Cache, Geometry, Path, Stroke},
-        container, stack, text,
+        canvas::{self, Cache, Geometry, LineCap, Path, Stroke},
+        column, container, stack, text,
     },
 };
-use std::f32::consts::PI;
+use std::{f32::consts::PI};
 
 use crate::app::{AppState, Message};
 
@@ -45,30 +44,42 @@ impl<'a> canvas::Program<Message> for PieChart<'a> {
     ) -> Vec<Geometry> {
         let geometry = self.cache.draw(renderer, bounds.size(), |frame| {
             let center = frame.center();
-            let radius = 90.0;
+            let radius = 70.0;
+            let stroke_width = 25.0;
+            let desired_offset: f32 = ((stroke_width / 2.0) + 1.0) / radius;
 
             let total: f32 = self.data.programs.values().map(|&i| i as f32).sum();
             let mut current_angle = 0.0;
 
             for (i, value) in self.data.programs.iter().enumerate() {
-                let slice_angle = (*value.1 as f32 / total) * 2.0 * PI;
-                let end_angle = current_angle + slice_angle;
+                let slice_percentage = *value.1 as f32 / total;
+                let slice_angle = slice_percentage * 2.0 * PI;
+
+                let min_angle = desired_offset * 2.0 + 0.001;
+                let effective_angle = slice_angle.max(min_angle);
+
+                let start = current_angle + desired_offset;
+                let end = current_angle + effective_angle - desired_offset;
 
                 let color = self.colors[i % self.colors.len()];
 
                 let arc = Path::new(|p| {
-                    p.move_to(center);
                     p.arc(canvas::path::Arc {
                         center,
                         radius: radius,
-                        start_angle: Radians(current_angle),
-                        end_angle: Radians(end_angle),
+                        start_angle: Radians(start),
+                        end_angle: Radians(end),
                     });
                 });
 
-                frame.stroke(&arc, Stroke::default().with_color(color).with_width(20.0));
-
-                current_angle = end_angle;
+                frame.stroke(
+                    &arc,
+                    Stroke::default()
+                        .with_color(color)
+                        .with_width(stroke_width)
+                        .with_line_cap(LineCap::Round),
+                );
+                current_angle += effective_angle;
             }
         });
 
@@ -78,14 +89,16 @@ impl<'a> canvas::Program<Message> for PieChart<'a> {
 
 pub fn hero_section(state: &AppState) -> Element<'_, Message> {
     let pie_chart = container(
-        canvas(PieChart::new(state))
+        canvas::Canvas::new(PieChart::new(state))
             .width(Length::Fixed(200.0))
             .height(Length::Fixed(200.0)),
     );
 
-    let time = container(text("12h 44min")).center_x(200).center_y(200);
+    let time = column![text("12h"), text("44min")]
+        .spacing(10)
+        .align_x(Alignment::Center);
 
-    let content = stack![pie_chart, time];
+    let content = stack![pie_chart, container(time).center_y(200.0).center_x(200.0)];
 
     container(content)
         .width(Length::Fill)
